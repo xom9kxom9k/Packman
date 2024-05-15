@@ -2,39 +2,41 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 public class Model extends JPanel implements ActionListener {
     private Dimension d;
     private final Font smallFont = new Font("Arial", Font.BOLD, 14);
-    public static boolean inGame = false;
-    private static boolean dying = false;
-    private static final int BLOCK_SIZE = 24;
-    private static final int N_BLOCKS = 15;
+    public boolean inGame = false;
+    private boolean dying = false;
+    private final int BLOCK_SIZE = 24;
+    private final int N_BLOCKS = 15;
     private final int SCREEN_SIZE = N_BLOCKS * BLOCK_SIZE;
     private final int MAX_GHOSTS = 12;
     private final int PACMAN_SPEED = 6;
-    private static int N_GHOSTS = 6;
-    private static int lives;
-    private static int score;
+    private int N_GHOSTS = 6;
+    private int lives;
+    private int score;
     private int[] dx, dy;
-    private static int[] ghost_x;
-    private static int[] ghost_y;
-    private static int[] ghost_dx;
-    private static int[] ghost_dy;
-    private static int[] ghostSpeed;
+    private int[] ghost_x;
+    private int[] ghost_y;
+    private int[] ghost_dx;
+    private int[] ghost_dy;
+    private int[] ghostSpeed;
     private Image heart, ghost;
     private Image up, down, left, right;
-    private static int pacman_x;
-    private static int pacman_y;
-    private static int pacmand_x;
-    private static int pacmand_y;
-    public static int req_dx, req_dy;
-    private static final int[] validSpeeds = {1, 2, 3, 4, 6, 8};
+    private int pacman_x;
+    private int pacman_y;
+    private int pacmand_x;
+    private int pacmand_y;
+    public int req_dx, req_dy;
+    private final int[] validSpeeds = {1, 2, 3, 4, 6, 8};
     private final int maxSpeed = 6;
-    private static int currentSpeed = 3;
-    private static short[] screenData;
-    public static Timer timer;
-    private static final int[] levelData = {
+    private int currentSpeed = 3;
+    private short[] screenData;
+    public Timer timer;
+    private final short[] levelData = {
             19, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 22,
             17, 16, 16, 16, 16, 24, 16, 16, 16, 16, 16, 16, 16, 16, 20,
             25, 24, 24, 24, 28, 0, 17, 16, 16, 16, 16, 16, 16, 16, 20,
@@ -60,12 +62,12 @@ public class Model extends JPanel implements ActionListener {
         initGame();
     }
     private void loadImages() {
-        down = new ImageIcon("/src/images/down.gif").getImage();
-        up = new ImageIcon("/src/images/up.gif").getImage();
-        left = new ImageIcon("/src/images/left.gif").getImage();
-        right = new ImageIcon("/src/images/right.gif").getImage();
-        ghost = new ImageIcon("/src/images/ghost.gif").getImage();
-        heart = new ImageIcon("/src/images/heart.png").getImage();
+        down = new ImageIcon("src/images/down.gif").getImage();
+        up = new ImageIcon("src/images/up.gif").getImage();
+        left = new ImageIcon("src/images/left.gif").getImage();
+        right = new ImageIcon("src/images/right.gif").getImage();
+        ghost = new ImageIcon("src/images/ghost.gif").getImage();
+        heart = new ImageIcon("src/images/heart.png").getImage();
 
     }
     private void initVariables() {
@@ -84,20 +86,20 @@ public class Model extends JPanel implements ActionListener {
         timer.start();
     }
     // начало, инициализация игры
-    public static void initGame() {
+    public void initGame() {
 
         lives = 3;
         score = 0;
+        initLevel();
         N_GHOSTS = 6;
         currentSpeed = 3;
-        initLevel();
     }
     // загрхука карты
-    private static void initLevel() {
+    private void initLevel() {
 
         int i;
         for (i = 0; i < N_BLOCKS * N_BLOCKS; i++) {
-            screenData[i] = (short) levelData[i];
+            screenData[i] = levelData[i];
         }
 
         continueLevel();
@@ -300,7 +302,7 @@ public class Model extends JPanel implements ActionListener {
     private void drawGhost(Graphics2D g2d, int x, int y) {
         g2d.drawImage(ghost, x, y, this);
     }
-    private static void continueLevel() {
+    private void continueLevel() {
 
         int dx = 1;
         int random;
@@ -392,10 +394,40 @@ public class Model extends JPanel implements ActionListener {
         g2d.dispose();
     }
 
+    //controls
+    class TAdapter extends KeyAdapter {
 
+        @Override
+        public void keyPressed(KeyEvent e) {
+
+            int key = e.getKeyCode();
+
+            if (inGame) {
+                if (key == KeyEvent.VK_LEFT) {
+                    req_dx = -1;
+                    req_dy = 0;
+                } else if (key == KeyEvent.VK_RIGHT) {
+                    req_dx = 1;
+                    req_dy = 0;
+                } else if (key == KeyEvent.VK_UP) {
+                    req_dx = 0;
+                    req_dy = -1;
+                } else if (key == KeyEvent.VK_DOWN) {
+                    req_dx = 0;
+                    req_dy = 1;
+                } else if (key == KeyEvent.VK_ESCAPE && timer.isRunning()) {
+                    inGame = false;
+                }
+            } else {
+                if (key == KeyEvent.VK_SPACE) {
+                    inGame = true;
+                    initGame();
+                }
+            }
+        }
+    }
     @Override
     public void actionPerformed(ActionEvent e) {
-
+        repaint();
     }
-
 }
