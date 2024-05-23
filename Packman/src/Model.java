@@ -8,7 +8,7 @@ import java.awt.event.KeyEvent;
 public class Model extends JPanel implements ActionListener {
     private Dimension d;
     private final Font smallFont = new Font("Arial", Font.BOLD, 14);
-    public boolean inGame = false;
+    public static boolean inGame = false;
     private boolean dying = false;
     private final int BLOCK_SIZE = 24;
     private final int N_BLOCKS = 15;
@@ -30,13 +30,15 @@ public class Model extends JPanel implements ActionListener {
     private int pacman_y;
     private int pacmand_x;
     private int pacmand_y;
-    public int req_dx, req_dy;
+    public static int req_dx, req_dy;
     private final int[] validSpeeds = {1, 2, 3, 4, 6, 8};
     private final int maxSpeed = 6;
     private int currentSpeed = 3;
     private short[] screenData;
     public Timer timer;
-    private final short[] levelData = {
+    private boolean levelCopleted = false;
+    //игровое поле в виде массива
+    private final int[] levelData = {
             19, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 22,
             17, 16, 16, 16, 16, 24, 16, 16, 16, 16, 16, 16, 16, 16, 20,
             25, 24, 24, 24, 28, 0, 17, 16, 16, 16, 16, 16, 16, 16, 20,
@@ -53,14 +55,31 @@ public class Model extends JPanel implements ActionListener {
             17, 16, 16, 20, 0, 17, 16, 16, 16, 16, 16, 16, 16, 16, 20,
             25, 24, 24, 24, 26, 24, 24, 24, 24, 24, 24, 24, 24, 24, 28
     };
+    private final int[] levelData2 = {
+            19, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 22,
+            17, 16, 16, 24, 24, 24, 16, 16, 16, 16, 24, 24, 24, 24, 20,
+            25, 24, 28, 0,  0,  0,  17, 16, 16, 20, 0, 0, 0, 0, 21,
+            0,  0,  0,  0,  0,  0,  17, 16, 24, 16, 18, 18, 18, 18, 20,
+            19, 18, 18, 18, 22, 0,  17, 20, 0, 25, 24, 24, 24, 24, 20,
+            17, 16, 16, 16, 20, 0,  17, 20, 0, 0, 0,  0,  0,  0, 21,
+            17, 16, 16, 16, 16, 18, 16, 20, 0, 0, 0,  0,  0,  0, 21,
+            17, 16, 16, 24, 24, 16, 16, 20, 0, 0, 0,  0,  0,  0, 21,
+            17, 16, 28, 0, 0, 17, 16, 16, 18, 18, 18, 22, 0, 0, 21,
+            17, 28, 0, 0, 0, 25, 24, 24, 24, 24, 16, 20, 0, 0, 21,
+            21, 0,  0,  0,  0,  0,  0,   0, 0, 0, 17, 16, 18, 18, 20,
+            17, 18, 18, 22, 0, 19, 18, 18, 18, 18, 16, 16, 16, 16, 20,
+            17, 16, 16, 20, 0, 17, 16, 16, 16, 16, 16, 16, 16, 16, 20,
+            17, 16, 16, 20, 0, 17, 16, 16, 16, 16, 16, 16, 16, 16, 20,
+            25, 24, 24, 24, 26, 24, 24, 24, 24, 24, 24, 24, 24, 24, 28
+    };
     public Model() {
-
         loadImages();
         initVariables();
         addKeyListener(new TAdapter());
         setFocusable(true);
         initGame();
     }
+    //загрузка файлов
     private void loadImages() {
         down = new ImageIcon("src/images/down.gif").getImage();
         up = new ImageIcon("src/images/up.gif").getImage();
@@ -70,6 +89,7 @@ public class Model extends JPanel implements ActionListener {
         heart = new ImageIcon("src/images/heart.png").getImage();
 
     }
+    //загрузка стартовых параметров
     private void initVariables() {
 
         screenData = new short[N_BLOCKS * N_BLOCKS];
@@ -82,7 +102,7 @@ public class Model extends JPanel implements ActionListener {
         dx = new int[4];
         dy = new int[4];
 
-        timer = new Timer(40, this); //скорость передвижения
+        timer = new Timer(200, this); //скорость передвижения
         timer.start();
     }
     // начало, инициализация игры
@@ -94,16 +114,26 @@ public class Model extends JPanel implements ActionListener {
         N_GHOSTS = 6;
         currentSpeed = 3;
     }
-    // загрхука карты
+    // загрузка левела
     private void initLevel() {
 
         int i;
         for (i = 0; i < N_BLOCKS * N_BLOCKS; i++) {
-            screenData[i] = levelData[i];
+            screenData[i] = (short) levelData[i];
         }
 
         continueLevel();
     }
+    private void initLevel2() {
+
+        int i;
+        for (i = 0; i < N_BLOCKS * N_BLOCKS; i++) {
+            screenData[i] = (short) levelData2[i];
+        }
+
+        continueLevel();
+    }
+    //запуск игры
     private void playGame(Graphics2D g2d) {
 
         if (dying) {
@@ -113,6 +143,22 @@ public class Model extends JPanel implements ActionListener {
         } else {
 
             movePacman();
+            drawMaze(g2d);
+            drawPacman(g2d);
+            moveGhosts(g2d);
+            checkMaze();
+        }
+    }
+    private void playGame2(Graphics2D g2d) {
+
+        if (dying) {
+
+            death();
+
+        } else {
+
+            movePacman();
+            drawMaze2(g2d);
             drawPacman(g2d);
             moveGhosts(g2d);
             checkMaze();
@@ -138,10 +184,8 @@ public class Model extends JPanel implements ActionListener {
     }
     // передвижение пакмана
     private void movePacman() {
-
         int pos;
         short ch;
-
         if (pacman_x % BLOCK_SIZE == 0 && pacman_y % BLOCK_SIZE == 0) {
             pos = pacman_x / BLOCK_SIZE + N_BLOCKS * (int) (pacman_y / BLOCK_SIZE);
             ch = screenData[pos];
@@ -150,7 +194,6 @@ public class Model extends JPanel implements ActionListener {
                 screenData[pos] = (short) (ch & 15);
                 score++;
             }
-
             if (req_dx != 0 || req_dy != 0) {
                 if (!((req_dx == -1 && req_dy == 0 && (ch & 1) != 0)
                         || (req_dx == 1 && req_dy == 0 && (ch & 4) != 0)
@@ -160,7 +203,6 @@ public class Model extends JPanel implements ActionListener {
                     pacmand_y = req_dy;
                 }
             }
-
             if ((pacmand_x == -1 && pacmand_y == 0 && (ch & 1) != 0)
                     || (pacmand_x == 1 && pacmand_y == 0 && (ch & 4) != 0)
                     || (pacmand_x == 0 && pacmand_y == -1 && (ch & 2) != 0)
@@ -260,32 +302,17 @@ public class Model extends JPanel implements ActionListener {
     // проверка на прохождение
     private void checkMaze() {
 
-        int i = 0;
-        boolean finished = true;
-
-        while (i < N_BLOCKS * N_BLOCKS && finished) {
-
-            if ((screenData[i]) != 0) {
-                finished = false;
-            }
-
-            i++;
+        boolean finished = false;
+        if (score == 194) {
+            finished = true;
+            levelCopleted = true;
         }
 
         if (finished) {
 
-            score += 50;
-
-            if (N_GHOSTS < MAX_GHOSTS) {
-                N_GHOSTS++;
-            }
-
-            if (currentSpeed < maxSpeed) {
-                currentSpeed++;
-            }
-
-            initLevel();
+            initLevel2();
         }
+
     }
     // смерть пакмеэна
     private void death() {
@@ -309,7 +336,7 @@ public class Model extends JPanel implements ActionListener {
 
         for (int i = 0; i < N_GHOSTS; i++) {
 
-            ghost_y[i] = 4 * BLOCK_SIZE; //start position
+            ghost_y[i] = 4 * BLOCK_SIZE;
             ghost_x[i] = 4 * BLOCK_SIZE;
             ghost_dy[i] = 0;
             ghost_dx[i] = dx;
@@ -323,19 +350,19 @@ public class Model extends JPanel implements ActionListener {
             ghostSpeed[i] = validSpeeds[random];
         }
 
-        pacman_x = 7 * BLOCK_SIZE;  //стартовая позиция
+        pacman_x = 7 * BLOCK_SIZE;
         pacman_y = 11 * BLOCK_SIZE;
         pacmand_x = 0;
         pacmand_y = 0;
         req_dx = 0;
         req_dy = 0;
         dying = false;
-    }
-    private void drawMaze(Graphics2D g2d) {
 
+    }
+    //прорисовка игрового поля
+    private void drawMaze(Graphics2D g2d) {
         short i = 0;
         int x, y;
-
         for (y = 0; y < SCREEN_SIZE; y += BLOCK_SIZE) {
             for (x = 0; x < SCREEN_SIZE; x += BLOCK_SIZE) {
 
@@ -345,25 +372,20 @@ public class Model extends JPanel implements ActionListener {
                 if ((levelData[i] == 0)) {
                     g2d.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
                 }
-
                 if ((screenData[i] & 1) != 0) {
                     g2d.drawLine(x, y, x, y + BLOCK_SIZE - 1);
                 }
-
                 if ((screenData[i] & 2) != 0) {
                     g2d.drawLine(x, y, x + BLOCK_SIZE - 1, y);
                 }
-
                 if ((screenData[i] & 4) != 0) {
                     g2d.drawLine(x + BLOCK_SIZE - 1, y, x + BLOCK_SIZE - 1,
                             y + BLOCK_SIZE - 1);
                 }
-
                 if ((screenData[i] & 8) != 0) {
                     g2d.drawLine(x, y + BLOCK_SIZE - 1, x + BLOCK_SIZE - 1,
                             y + BLOCK_SIZE - 1);
                 }
-
                 if ((screenData[i] & 16) != 0) {
                     g2d.setColor(new Color(255,255,255));
                     g2d.fillOval(x + 10, y + 10, 6, 6);
@@ -373,6 +395,42 @@ public class Model extends JPanel implements ActionListener {
             }
         }
     }
+    private void drawMaze2(Graphics2D g2d) {
+        short i = 0;
+        int x, y;
+        for (y = 0; y < SCREEN_SIZE; y += BLOCK_SIZE) {
+            for (x = 0; x < SCREEN_SIZE; x += BLOCK_SIZE) {
+
+                g2d.setColor(new Color(255,72,251));
+                g2d.setStroke(new BasicStroke(5));
+
+                if ((levelData2[i] == 0)) {
+                    g2d.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
+                }
+                if ((screenData[i] & 1) != 0) {
+                    g2d.drawLine(x, y, x, y + BLOCK_SIZE - 1);
+                }
+                if ((screenData[i] & 2) != 0) {
+                    g2d.drawLine(x, y, x + BLOCK_SIZE - 1, y);
+                }
+                if ((screenData[i] & 4) != 0) {
+                    g2d.drawLine(x + BLOCK_SIZE - 1, y, x + BLOCK_SIZE - 1,
+                            y + BLOCK_SIZE - 1);
+                }
+                if ((screenData[i] & 8) != 0) {
+                    g2d.drawLine(x, y + BLOCK_SIZE - 1, x + BLOCK_SIZE - 1,
+                            y + BLOCK_SIZE - 1);
+                }
+                if ((screenData[i] & 16) != 0) {
+                    g2d.setColor(new Color(255,255,255));
+                    g2d.fillOval(x + 10, y + 10, 6, 6);
+                }
+
+                i++;
+            }
+        }
+    }
+
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
@@ -381,20 +439,21 @@ public class Model extends JPanel implements ActionListener {
         g2d.setColor(Color.black);
         g2d.fillRect(0, 0, d.width, d.height);
 
-        drawMaze(g2d);
         drawScore(g2d);
 
         if (inGame) {
             playGame(g2d);
-        } else {
+        }
+        if (inGame && levelCopleted) {
+            playGame2(g2d);
+        }
+        if (!inGame) {
             showIntroScreen(g2d);
         }
 
         Toolkit.getDefaultToolkit().sync();
         g2d.dispose();
     }
-
-    //controls
     class TAdapter extends KeyAdapter {
 
         @Override
